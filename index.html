@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Picture Hanging Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .result-box {
+            background-color: #EFF6FF;
+            border-left: 4px solid #3B82F6;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-2xl mx-auto p-4 sm:p-6 md:p-8">
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="p-6 md:p-8">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 text-center">Picture Hanging Calculator</h1>
+                <p class="text-gray-600 text-center mt-2">Find the perfect height to hang your art (in cm).</p>
+            </div>
+
+            <div class="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                <!-- Left Column: Inputs -->
+                <div class="space-y-6">
+                    <div>
+                        <label for="picture-height" class="block text-sm font-medium text-gray-700">A: Picture Height (cm)</label>
+                        <input type="number" id="picture-height" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-3" placeholder="e.g., 60">
+                    </div>
+
+                    <div>
+                        <label for="wire-distance" class="block text-sm font-medium text-gray-700">B: Distance to Hanger (cm)</label>
+                        <input type="number" id="wire-distance" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-3" placeholder="e.g., 8">
+                    </div>
+
+                    <button id="calculate-btn" class="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300 ease-in-out transform hover:scale-105">
+                        Calculate
+                    </button>
+                </div>
+
+                <!-- Right Column: Diagram and Instructions -->
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="font-semibold text-gray-800 mb-3 text-center">How to Measure</h3>
+                    <!-- SVG Diagram -->
+                    <div class="flex justify-center items-center mb-4">
+                        <svg width="150" height="180" viewBox="0 0 150 180" class="bg-white border-2 border-gray-300 rounded-md p-2">
+                            <!-- Picture Frame -->
+                            <rect x="10" y="10" width="130" height="160" fill="none" stroke="#4A5568" stroke-width="4"/>
+                            <!-- Hanging Wire -->
+                            <path d="M 40 15 C 75 45, 75 45, 110 15" fill="none" stroke="#718096" stroke-width="2" stroke-dasharray="3 3"/>
+                            <circle cx="75" cy="30" r="3" fill="#3B82F6"/>
+                            <title>Hanging Point</title>
+
+                            <!-- Measurement A: Picture Height -->
+                            <path d="M 145 10 L 155 10 M 145 170 L 155 170 M 150 10 L 150 170" fill="none" stroke="#3B82F6" stroke-width="1.5"/>
+                            <text x="160" y="95" font-size="14" fill="#3B82F6" font-weight="bold">A</text>
+
+                            <!-- Measurement B: Wire Distance -->
+                            <path d="M 75 10 L 75 30" fill="none" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="2 2"/>
+                             <path d="M 70 10 L 80 10 M 70 30 L 80 30" fill="none" stroke="#EF4444" stroke-width="1.5"/>
+                            <text x="55" y="25" font-size="14" fill="#EF4444" font-weight="bold">B</text>
+                        </svg>
+                    </div>
+                    <ul class="text-xs text-gray-600 space-y-2">
+                        <li><strong>A: Picture Height:</strong> Measure the full height of your picture frame from top to bottom.</li>
+                        <li><strong>B: Distance to Hanger:</strong> Measure from the top of the frame down to the hanging point (the top of the wire when pulled tight, or the sawtooth hanger).</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Result Section -->
+            <div id="result-section" class="p-6 md:p-8 border-t border-gray-200 hidden">
+                 <div class="result-box p-4 rounded-md">
+                    <h2 class="text-lg font-semibold text-gray-800">Your Result</h2>
+                    <p class="text-gray-600 mt-1">Position the bottom of the hook or nail at:</p>
+                    <p id="result-text" class="text-3xl sm:text-4xl font-bold text-blue-600 mt-2"></p>
+                    <p class="text-sm text-gray-500 mt-1">from the floor.</p>
+                </div>
+            </div>
+        </div>
+        <footer class="text-center text-xs text-gray-400 mt-6">
+            <p>Based on the gallery standard of hanging artwork centered at 145 cm.</p>
+        </footer>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const pictureHeightInput = document.getElementById('picture-height');
+        const wireDistanceInput = document.getElementById('wire-distance');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const resultSection = document.getElementById('result-section');
+        const resultText = document.getElementById('result-text');
+
+        // --- State ---
+        const eyeLevelCm = 145; // Standard eye level in centimeters is constant.
+
+        // --- Functions ---
+
+        /**
+         * Calculates the correct height for the picture hook in centimeters.
+         * The formula is: Hook Height = Standard Eye Level + (Picture Height / 2) - Distance from top to hanger.
+         */
+        function calculateHangingHeight() {
+            // 1. Get and validate inputs
+            const pictureHeight = parseFloat(pictureHeightInput.value);
+            const wireDistance = parseFloat(wireDistanceInput.value);
+
+            if (isNaN(pictureHeight) || isNaN(wireDistance) || pictureHeight <= 0) {
+                alert('Please enter valid, positive numbers for both measurements.');
+                return;
+            }
+            
+            if (wireDistance >= pictureHeight) {
+                alert('The distance to the hanger cannot be greater than or equal to the picture height.');
+                return;
+            }
+
+            // 2. Perform the calculation
+            const hookHeight = eyeLevelCm + (pictureHeight / 2) - wireDistance;
+
+            // 3. Display the result
+            resultText.textContent = `${hookHeight.toFixed(1)} cm`;
+            resultSection.classList.remove('hidden');
+        }
+        
+        // --- Custom Alert ---
+        // Override default alert for a better user experience.
+        function alert(message) {
+            let existingAlert = document.querySelector('.custom-alert');
+            if(existingAlert) existingAlert.remove();
+
+            const alertBox = document.createElement('div');
+            alertBox.className = 'custom-alert fixed top-5 right-5 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow-lg z-50';
+            alertBox.setAttribute('role', 'alert');
+            alertBox.innerHTML = `<strong class="font-bold">Oops!</strong><span class="block sm:inline ml-2">${message}</span>`;
+            document.body.appendChild(alertBox);
+
+            setTimeout(() => {
+                alertBox.style.transition = 'opacity 0.5s ease';
+                alertBox.style.opacity = '0';
+                setTimeout(() => alertBox.remove(), 500);
+            }, 3000);
+        }
+
+
+        // --- Event Listeners ---
+        calculateBtn.addEventListener('click', calculateHangingHeight);
+
+        // Allow pressing Enter to calculate
+        pictureHeightInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                calculateHangingHeight();
+            }
+        });
+        wireDistanceInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                calculateHangingHeight();
+            }
+        });
+
+    </script>
+</body>
+</html>
+```
+I've removed the unit selection buttons and updated the code to work exclusively in centimeters. I also updated the labels and placeholder text to make this clear.
+
+Let me know if there's anything else you ne
